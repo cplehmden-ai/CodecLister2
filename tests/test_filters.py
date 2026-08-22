@@ -1,6 +1,6 @@
 """Tests fuer die Filterlogik."""
 
-from codeclister.core.filters import MediaFilter
+from codeclister.core.filters import MediaFilter, codec_query_matches
 from codeclister.core.models import HdrType, MediaFileInfo
 
 
@@ -51,6 +51,27 @@ def test_filter_video_codec_query_case_insensitive():
     f = MediaFilter(video_codec_query="hevc")
     assert f.matches(make_info(video_codec="H.265/HEVC"))
     assert not f.matches(make_info(video_codec="H.264/AVC"))
+
+
+def test_codec_query_supports_semicolon_or_terms():
+    assert codec_query_matches("DivX;Xvid", ["MPEG-4 Visual Xvid"])
+    assert codec_query_matches("DivX;Xvid", ["DivX 5"])
+    assert not codec_query_matches("DivX;Xvid", ["H.265/HEVC"])
+
+
+def test_codec_query_supports_exclusion_with_bang_or_minus():
+    assert not codec_query_matches("!HEVC", ["H.265/HEVC"])
+    assert not codec_query_matches("-HEVC", ["H.265/HEVC"])
+    assert codec_query_matches("!HEVC", ["H.264/AVC"])
+
+
+def test_codec_query_supports_mixed_include_and_exclude_terms():
+    assert codec_query_matches("DivX;Xvid;!unsupported", ["Xvid"])
+    assert not codec_query_matches("DivX;Xvid;!Xvid", ["Xvid"])
+
+
+def test_codec_query_with_only_exclusions_keeps_other_codecs():
+    assert codec_query_matches("!HEVC;-AVC", ["Xvid"])
 
 
 def test_filter_audio_codec_query_matches_any_track():

@@ -219,9 +219,9 @@ class MainWindow(QMainWindow):
         self.cmb_type = QComboBox()
         self.cmb_type.addItems(["Video + Audio", "Nur Video", "Nur Audio"])
         self.edit_vcodec = QLineEdit()
-        self.edit_vcodec.setPlaceholderText("Video-Codec, z. B. HEVC")
+        self.edit_vcodec.setPlaceholderText("Video-Codec: HEVC;AVC;!DivX")
         self.edit_acodec = QLineEdit()
-        self.edit_acodec.setPlaceholderText("Audio-Codec, z. B. TrueHD")
+        self.edit_acodec.setPlaceholderText("Audio-Codec: TrueHD;!AAC")
         self.edit_name = QLineEdit()
         self.edit_name.setPlaceholderText("Dateiname enthält…")
         for widget in (

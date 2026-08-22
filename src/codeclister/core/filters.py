@@ -2,9 +2,31 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from codeclister.core.models import HdrType, MediaFileInfo
+
+
+def codec_query_matches(query: str, values: list[str]) -> bool:
+    """Prüft Codec-Filter mit ODER-Begriffen und Ausschlüssen.
+
+    Syntax: ``DivX;Xvid`` findet einen der beiden Begriffe, ``!HEVC`` oder
+    ``-HEVC`` schließt HEVC aus. Positive und negative Begriffe können mit
+    Semikolon kombiniert werden.
+    """
+    terms = [term.strip().lower() for term in query.split(";") if term.strip()]
+    if not terms:
+        return True
+
+    candidates = [value.lower() for value in values]
+    negative_terms = [term[1:] for term in terms if term.startswith(("!", "-")) and len(term) > 1]
+    positive_terms = [term for term in terms if not term.startswith(("!", "-"))]
+
+    if any(any(term in value for value in candidates) for term in negative_terms):
+        return False
+    return not positive_terms or any(
+        any(term in value for value in candidates) for term in positive_terms
+    )
 
 
 @dataclass
@@ -37,12 +59,10 @@ class MediaFilter:
         if self.hdr_types is not None and info.is_video and info.hdr_type not in self.hdr_types:
             return False
         if self.video_codec_query:
-            query = self.video_codec_query.lower()
-            if query not in (info.video_codec or "").lower():
+            if not codec_query_matches(self.video_codec_query, [info.video_codec or ""]):
                 return False
         if self.audio_codec_query:
-            query = self.audio_codec_query.lower()
-            if not any(query in codec.lower() for codec in info.audio_codecs):
+            if not codec_query_matches(self.audio_codec_query, info.audio_codecs):
                 return False
         if self.name_query and self.name_query.lower() not in info.name.lower():
             return False

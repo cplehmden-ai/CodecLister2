@@ -20,7 +20,9 @@ Weiternutzen) oder als **CSV exportieren** (z. B. für Excel).
 - 📁 Ordnerwahl inkl. optionalem rekursivem Scan
 - ⏳ Fortschrittsbalken mit Abbruchmöglichkeit während des Einlesens
 - 🔎 Filter: Auflösung (z. B. „schlechter als 720p", „1080p und besser", „4K"),
-  HDR-Typ, Video-/Audio-Codec (Freitext), Dateiname, Medientyp
+  HDR-Typ, Video-/Audio-Codec, Dateiname, Medientyp. Codec-Filter unterstützen
+  mehrere Begriffe mit `;` als ODER-Suche sowie Ausschlüsse mit `!` oder `-`,
+  z. B. `DivX;Xvid`, `!HEVC` oder `DivX;Xvid;!HEVC`.
 - 🔃 Sortierbare Tabelle (Klick auf Spaltenkopf)
 - 💾 JSON speichern/laden, CSV-Export
 - 🖥️ GUI mit [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)
