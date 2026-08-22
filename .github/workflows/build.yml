@@ -55,6 +55,7 @@ jobs:
         run: |
           python -m nuitka \
             --onefile \
+            --remove-output \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
@@ -67,6 +68,7 @@ jobs:
         run: |
           python -m nuitka \
             --onefile \
+            --remove-output \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
@@ -81,6 +83,7 @@ jobs:
           $dll = "C:\Program Files\MediaInfo\MediaInfo.dll"
           python -m nuitka `
             --onefile `
+            --remove-output `
             --enable-plugin=pyside6 `
             --include-package=pymediainfo `
             --include-data-dir=translations=translations `
