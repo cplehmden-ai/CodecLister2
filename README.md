@@ -13,7 +13,7 @@ filterable list:
 Results can be saved and loaded as **JSON** for later use or exported as
 **CSV** for spreadsheets such as Excel.
 
-![Status](https://img.shields.io/badge/status-early%20development-orange)
+![Status](https://img.shields.io/badge/status-stable-brightgreen)
 
 ## Features
 
@@ -28,7 +28,8 @@ Results can be saved and loaded as **JSON** for later use or exported as
 - Sortable table by clicking a column header
 - Save/load JSON lists and export CSV
 - GUI built with [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)
-- GUI language switch between German and English
+- GUI language switch between all languages found in `translations/*.po`
+  (built-in: German, English, French)
 - Custom languages can be added through `translations/<code>.po`; see
   [translations/README.md](translations/README.md)
 - Ready for binary builds via GitHub Actions and [Nuitka](https://nuitka.net/)
@@ -93,8 +94,8 @@ one-file binaries for Windows, Linux, and macOS on every `v*` tag, or manually
 via `workflow_dispatch`, and attaches them to a GitHub release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 ## Project structure

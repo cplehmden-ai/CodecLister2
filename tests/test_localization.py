@@ -5,7 +5,7 @@ from codeclister.localization import Translation, available_translations
 
 def test_builtin_translations_are_available():
     translations = {item.language: item for item in available_translations()}
-    assert translations["de"].gettext("Choose folder...") == "Ordner waehlen..."
+    assert translations["de"].gettext("Choose folder...") == "Ordner wählen..."
     assert translations["en"].gettext("Choose folder...") == "Choose folder..."
     assert translations["de"].display_name == "Deutsch"
 

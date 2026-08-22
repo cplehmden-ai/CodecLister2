@@ -48,11 +48,13 @@ jobs:
       - name: Build with Nuitka (Linux)
         if: runner.os == 'Linux'
         run: |
+          lib=$(ldconfig -p | grep -m1 'libmediainfo\.so' | awk '{print $NF}')
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
+            --include-data-files="$lib=pymediainfo/libmediainfo.so.0" \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
@@ -60,11 +62,13 @@ jobs:
       - name: Build with Nuitka (macOS)
         if: runner.os == 'macOS'
         run: |
+          lib=$(find "$(brew --prefix media-info)" -name 'libmediainfo*.dylib' | head -n1)
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
+            --include-data-files="$lib=pymediainfo/libmediainfo.0.dylib" \
             --macos-create-app-bundle \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
