@@ -41,6 +41,10 @@ def test_filter_widescreen_1920x960_counts_as_1080p():
     assert not MediaFilter(max_height=719).matches(make_info(width=1920, height=960))
 
 
+def test_filter_cinemascope_1920x800_counts_as_1080p():
+    assert MediaFilter(min_height=1080).matches(make_info(width=1920, height=800))
+
+
 def test_filter_4_3_1440x1080_counts_as_full_hd():
     assert MediaFilter(min_height=1080).matches(make_info(width=1440, height=1080))
 

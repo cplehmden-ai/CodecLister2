@@ -58,9 +58,9 @@ class MediaFilter:
         if not info.width:
             return height
         reference_height = round(info.width * 9 / 16)
-        # Nur annähernde Breitbildvarianten hochstufen. So bleibt z. B.
-        # 1920×720 echtes 720p, während 1920×960 als 1080p gilt.
-        if height >= reference_height * 0.8:
+        # Cinemascope kann deutlich niedriger als 16:9 sein. Die 70%-Grenze
+        # erkennt z. B. 1920×800 als 1080p, lässt 1920×720 aber als 720p.
+        if height >= reference_height * 0.7:
             return max(height, reference_height)
         return height
 
