@@ -109,4 +109,4 @@ tests/                       # pytest-Tests (Filter, HDR-Erkennung, Export)
 
 ## Lizenz
 
-[MIT](LICENSE)
+[GPL-3.0-or-later](LICENSE)

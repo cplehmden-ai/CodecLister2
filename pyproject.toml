@@ -8,11 +8,12 @@ version = "0.1.0"
 description = "Listet Video-/Audio-Codecs, Aufloesung und HDR-Infos aller Mediendateien in einem Ordner auf."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "GPL-3.0-or-later" }
 keywords = ["video", "codec", "mediainfo", "hdr", "dolby-vision", "gui"]
 classifiers = [
     "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
