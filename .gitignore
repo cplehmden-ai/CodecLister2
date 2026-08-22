@@ -1,0 +1,35 @@
+# Bytecode / Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtuelle Umgebungen
+.venv/
+venv/
+env/
+
+# Build-Artefakte
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Nuitka
+*.dist/
+*.build/
+*.onefile-build/
+nuitka-out/
+
+# IDE
+.idea/
+.vs/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Lokale Exporte
+*.codeclister.json

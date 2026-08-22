@@ -1,0 +1,107 @@
+name: Build binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # --- Native MediaInfo-Bibliothek (Laufzeit-Abhaengigkeit von pymediainfo) ---
+      - name: Install MediaInfo (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmediainfo-dev patchelf desktop-file-utils
+      - name: Install MediaInfo (macOS)
+        if: runner.os == 'macOS'
+        run: brew install media-info
+      - name: Install MediaInfo (Windows)
+        if: runner.os == 'Windows'
+        run: choco install mediainfo --no-progress
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      # --- Nuitka-Build ---
+      # Hinweis: pymediainfo laedt libmediainfo per ctypes. Die native Lib muss
+      # daher als Data-File mit in das Binary-Verzeichnis.
+      - name: Build with Nuitka (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python -m nuitka \
+            --onefile \
+            --enable-plugin=pyside6 \
+            --include-package=pymediainfo \
+            --output-filename=CodecLister \
+            --output-dir=nuitka-out \
+            --assume-yes-for-downloads \
+            src/codeclister/__main__.py
+      - name: Build with Nuitka (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          python -m nuitka \
+            --onefile \
+            --enable-plugin=pyside6 \
+            --include-package=pymediainfo \
+            --macos-create-app-bundle \
+            --output-filename=CodecLister \
+            --output-dir=nuitka-out \
+            --assume-yes-for-downloads \
+            src/codeclister/__main__.py
+      - name: Build with Nuitka (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $dll = "C:\Program Files\MediaInfo\MediaInfo.dll"
+          python -m nuitka `
+            --onefile `
+            --enable-plugin=pyside6 `
+            --include-package=pymediainfo `
+            --include-data-files="$dll=MediaInfo.dll" `
+            --windows-console-mode=disable `
+            --output-filename=CodecLister.exe `
+            --output-dir=nuitka-out `
+            --assume-yes-for-downloads `
+            src/codeclister/__main__.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodecLister-${{ matrix.os }}
+          path: nuitka-out/*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
