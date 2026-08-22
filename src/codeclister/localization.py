@@ -19,10 +19,13 @@ class Translation:
 
     @staticmethod
     def default_directory() -> Path:
-        # Im Quellbaum liegt translations neben src; bei einer Distribution
-        # darf ein translations-Ordner neben dem gestarteten Programm liegen.
+        # Im Quellbaum liegt translations neben src; im Nuitka-Onefile-Bundle
+        # liegt translations dagegen direkt neben dem codeclister-Paket
+        # (--include-data-dir=translations=translations), also eine Ebene
+        # hoeher als im Quellbaum.
         candidates = [
             Path(__file__).resolve().parents[2] / "translations",
+            Path(__file__).resolve().parents[1] / "translations",
             Path.cwd() / "translations",
         ]
         for candidate in candidates:

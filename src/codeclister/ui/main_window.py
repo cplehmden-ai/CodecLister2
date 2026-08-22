@@ -185,6 +185,9 @@ class MainWindow(QMainWindow):
         self._worker: ScanWorker | None = None
         self._settings = QSettings("CodecLister", "CodecLister")
         self._translations = available_translations()
+        if not self._translations:
+            # Fallback ohne Katalog, falls der translations-Ordner nicht gefunden wird.
+            self._translations = [Translation("en", Path())]
         self._translation_by_code = {item.language: item for item in self._translations}
         self._language = self._settings.value("language", "de", type=str)
         if self._language not in self._translation_by_code:
