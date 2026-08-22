@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -41,6 +41,9 @@ HDR_COLORS = {
     HdrType.HLG: QColor("#00838f"),
     HdrType.SDR: QColor("#558b2f"),
 }
+
+SELECTION_BG = QColor("#1a5fb4")
+SELECTION_FG = QColor("#ffffff")
 
 
 class MediaTableModel(QAbstractTableModel):
@@ -85,12 +88,21 @@ class MediaTableModel(QAbstractTableModel):
             if item.error:
                 tooltip += f"\nFehler: {item.error}"
             return tooltip
-        if role == Qt.ForegroundRole and column == 5 and item.is_video:
-            # Bei Selektion keine Farbe liefern, damit Qt die Highlight-Text-
-            # Farbe (weiss) verwendet und der Kontrast erhalten bleibt.
-            if self._view is not None and self._view.selectionModel().isRowSelected(index.row(), QModelIndex()):
-                return None
-            return HDR_COLORS.get(item.hdr_type)
+
+        selected = (
+            self._view is not None
+            and self._view.selectionModel().isRowSelected(index.row(), QModelIndex())
+        )
+        if role == Qt.ForegroundRole:
+            # Selektierte Zeilen: immer weisser Text (Kontrast!), sonst HDR-Farbe.
+            if selected:
+                return SELECTION_FG
+            if column == 5 and item.is_video:
+                return HDR_COLORS.get(item.hdr_type)
+            return None
+        if role == Qt.BackgroundRole and selected:
+            # Selektion explizit zeichnen, da Windows-Style die Palette ignoriert.
+            return SELECTION_BG
         if role == Qt.UserRole:  # Rohwerte fuer Sortierung
             return [
                 item.name.lower(),
@@ -224,12 +236,9 @@ class MainWindow(QMainWindow):
 
         # Tabelle
         self.table = QTableView()
-        # Kontrast in selektierten Zeilen sicherstellen: kräftiges Blau mit
-        # weissem Text (ueber Palette, damit es trotz AlternatingRowColors gilt).
-        palette = self.table.palette()
-        palette.setColor(QPalette.Highlight, QColor("#1a5fb4"))
-        palette.setColor(QPalette.HighlightedText, QColor("#ffffff"))
-        self.table.setPalette(palette)
+        # Selektionsrahmen der Plattform abschalten: die Selektion zeichnet das
+        # Model selbst (BackgroundRole), damit die Farben unter Windows gelten.
+        self.table.setStyleSheet("QTableView { selection-background-color: transparent; }")
         self.table.setModel(self.model)
         self.table.setSortingEnabled(True)
         self.table.sortByColumn(0, Qt.AscendingOrder)
