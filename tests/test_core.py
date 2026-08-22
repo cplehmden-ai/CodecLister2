@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 
 from codeclister.core.exporter import load_json, save_csv, save_json
-from codeclister.core.mediainfo_reader import detect_hdr_type
+from codeclister.core.mediainfo_reader import detect_hdr_type, normalize_audio_channels
 from codeclister.core.models import HdrType, MediaFileInfo
 
 
@@ -46,6 +46,17 @@ def test_detect_sdr():
 
 def test_detect_unknown_without_color_info():
     assert detect_hdr_type(fake_track()) is HdrType.UNKNOWN
+
+
+def test_normalize_audio_channels_common_layouts():
+    assert normalize_audio_channels("2", "") == "2.0"
+    assert normalize_audio_channels("6", "") == "5.1"
+    assert normalize_audio_channels("8", "") == "7.1"
+    assert normalize_audio_channels("12", "") == "7.1.4"
+
+
+def test_normalize_audio_channels_uses_channel_layout():
+    assert normalize_audio_channels("", "L R C LFE Ls Rs") == "5.1"
 
 
 def sample_item() -> MediaFileInfo:

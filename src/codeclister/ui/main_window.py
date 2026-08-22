@@ -32,7 +32,7 @@ from codeclister.core.scanner import ScanWorker
 
 log = logging.getLogger(__name__)
 
-COLUMNS = ["Dateiname", "Größe", "Auflösung", "Video-Codec", "Audio-Codec(s)", "HDR"]
+COLUMNS = ["Dateiname", "Größe", "Auflösung", "Video-Codec", "Audio-Codec(s) / Kanäle", "HDR"]
 
 HDR_COLORS = {
     HdrType.DOLBY_VISION: QColor("#7b1fa2"),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,34 @@ def normalize_audio_codec(fmt: str, profile: str) -> str:
     elif fmt.startswith("DTS") and "X" in profile.split():
         base = "DTS:X"
     return base
+
+
+def normalize_audio_channels(channel_count: str, channel_layout: str) -> str | None:
+    """Formatiert MediaInfo-Kanäle als übliche Kino-/Heimkino-Schreibweise."""
+    layout = channel_layout.strip()
+    if layout:
+        # MediaInfo liefert teilweise bereits Werte wie "L R C LFE Ls Rs".
+        if re.fullmatch(r"\d+(?:\.\d+){1,2}", layout):
+            return layout
+        speakers = len(re.findall(r"(?<![A-Za-z])[A-Za-z][A-Za-z0-9]*(?![A-Za-z])", layout))
+        lfe_channels = len(re.findall(r"(?:^|\s)LFE\d*(?=$|\s)", layout, re.IGNORECASE))
+        if speakers and lfe_channels:
+            return f"{speakers - lfe_channels}.{lfe_channels}"
+
+    match = re.search(r"\d+", channel_count)
+    if not match:
+        return None
+    channels = int(match.group())
+    common_layouts = {
+        1: "1.0",
+        2: "2.0",
+        3: "2.1",
+        6: "5.1",
+        8: "7.1",
+        10: "7.1.2",
+        12: "7.1.4",
+}
+    return common_layouts.get(channels, f"{channels}.0")
 
 
 def detect_hdr_type(video_track: Any) -> HdrType:
@@ -119,7 +148,12 @@ def analyze_file(path: Path) -> MediaFileInfo:
         info.hdr_type = HdrType.SDR
 
     info.audio_codecs = [
-        normalize_audio_codec(_get(t, "format"), _get(t, "format_profile"))
+        (
+            f"{normalize_audio_codec(_get(t, 'format'), _get(t, 'format_profile'))} "
+            f"({channels})"
+            if (channels := normalize_audio_channels(_get(t, "channel_s"), _get(t, "channel_layout")))
+            else normalize_audio_codec(_get(t, "format"), _get(t, "format_profile"))
+        )
         for t in audio_tracks
     ]
     return info
