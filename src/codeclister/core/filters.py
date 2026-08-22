@@ -47,14 +47,28 @@ class MediaFilter:
     only_videos: bool = False
     only_audio: bool = False
 
+    @staticmethod
+    def _resolution_height(info: MediaFileInfo) -> int:
+        """Liefert die 16:9-equivalente Höhe für Breitbildauflösungen."""
+        height = info.height or 0
+        if not info.width:
+            return height
+        reference_height = round(info.width * 9 / 16)
+        # Nur annähernde Breitbildvarianten hochstufen. So bleibt z. B.
+        # 1920×720 echtes 720p, während 1920×960 als 1080p gilt.
+        if height >= reference_height * 0.8:
+            return max(height, reference_height)
+        return height
+
     def matches(self, info: MediaFileInfo) -> bool:
         if self.only_videos and not info.is_video:
             return False
         if self.only_audio and info.is_video:
             return False
-        if self.min_height is not None and (info.height or 0) < self.min_height:
+        resolution_height = self._resolution_height(info)
+        if self.min_height is not None and resolution_height < self.min_height:
             return False
-        if self.max_height is not None and (info.height or 0) > self.max_height:
+        if self.max_height is not None and resolution_height > self.max_height:
             return False
         if self.hdr_types is not None and info.is_video and info.hdr_type not in self.hdr_types:
             return False

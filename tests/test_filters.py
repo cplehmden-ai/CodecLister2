@@ -36,6 +36,11 @@ def test_filter_max_height_schlechter_als_720p():
     assert f.matches(make_info(height=576))
 
 
+def test_filter_widescreen_1920x960_counts_as_1080p():
+    assert MediaFilter(min_height=1080).matches(make_info(width=1920, height=960))
+    assert not MediaFilter(max_height=719).matches(make_info(width=1920, height=960))
+
+
 def test_filter_hdr_types():
     f = MediaFilter(hdr_types={HdrType.DOLBY_VISION})
     assert not f.matches(make_info(hdr_type=HdrType.HDR10))
