@@ -47,7 +47,9 @@ jobs:
         run: choco install mediainfo --no-progress
 
       - name: Install Python dependencies
-        run: python -m pip install -r requirements-dev.txt
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -e .
 
       # --- Nuitka-Build ---
       # Hinweis: pymediainfo laedt libmediainfo per ctypes. Auf Linux/macOS
