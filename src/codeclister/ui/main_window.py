@@ -218,6 +218,14 @@ class MainWindow(QMainWindow):
 
         # Tabelle
         self.table = QTableView()
+        # Kontrast in selektierten Zeilen sicherstellen (sonst sind farbige
+        # HDR-Texte auf dem Standard-Selektionshintergrund kaum lesbar).
+        self.table.setStyleSheet(
+            "QTableView {"
+            "  selection-background-color: #1a5fb4;"
+            "  selection-color: #ffffff;"
+            "}"
+        )
         self.table.setModel(self.model)
         self.table.setSortingEnabled(True)
         self.table.sortByColumn(0, Qt.AscendingOrder)
