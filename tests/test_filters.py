@@ -41,6 +41,19 @@ def test_filter_widescreen_1920x960_counts_as_1080p():
     assert not MediaFilter(max_height=719).matches(make_info(width=1920, height=960))
 
 
+def test_filter_4_3_1440x1080_counts_as_full_hd():
+    assert MediaFilter(min_height=1080).matches(make_info(width=1440, height=1080))
+
+
+def test_filter_4_3_960x720_counts_as_720p():
+    assert MediaFilter(min_height=720).matches(make_info(width=960, height=720))
+    assert not MediaFilter(min_height=1080).matches(make_info(width=960, height=720))
+
+
+def test_filter_4_3_2880x2160_counts_as_uhd():
+    assert MediaFilter(min_height=2160).matches(make_info(width=2880, height=2160))
+
+
 def test_filter_hdr_types():
     f = MediaFilter(hdr_types={HdrType.DOLBY_VISION})
     assert not f.matches(make_info(hdr_type=HdrType.HDR10))

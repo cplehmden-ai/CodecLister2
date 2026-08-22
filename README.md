@@ -23,6 +23,11 @@ Weiternutzen) oder als **CSV exportieren** (z. B. für Excel).
   HDR-Typ, Video-/Audio-Codec, Dateiname, Medientyp. Codec-Filter unterstützen
   mehrere Begriffe mit `;` als ODER-Suche sowie Ausschlüsse mit `!` oder `-`,
   z. B. `DivX;Xvid`, `!HEVC` oder `DivX;Xvid;!HEVC`.
+
+Die Auflösungsfilter berücksichtigen sowohl die tatsächliche Höhe als auch die
+16:9-equivalente Breite. Dadurch werden beispielsweise `1920×960` und
+`1440×1080` als Full HD sowie `960×720` als 720p eingestuft. Das gilt analog
+für UHD/4K-Formate und funktioniert damit auch bei 4:3-Remasters.
 - 🔃 Sortierbare Tabelle (Klick auf Spaltenkopf)
 - 💾 JSON speichern/laden, CSV-Export
 - 🖥️ GUI mit [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)

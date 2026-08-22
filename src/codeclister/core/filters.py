@@ -49,7 +49,11 @@ class MediaFilter:
 
     @staticmethod
     def _resolution_height(info: MediaFileInfo) -> int:
-        """Liefert die 16:9-equivalente Höhe für Breitbildauflösungen."""
+        """Liefert eine Auflösungsstufe aus Höhe oder 16:9-equivalenter Breite.
+
+        Dadurch zählen sowohl 1920×960 als 1080p als auch 1440×1080 als
+        1080p. Bei 4:3-Material ist die tatsächliche Höhe bereits maßgeblich.
+        """
         height = info.height or 0
         if not info.width:
             return height
