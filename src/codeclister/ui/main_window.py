@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSettings, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -174,11 +174,13 @@ class MainWindow(QMainWindow):
 
         self._folder: Path | None = None
         self._worker: ScanWorker | None = None
+        self._settings = QSettings("CodecLister", "CodecLister")
 
         self.model = MediaTableModel(self)
         self._build_ui()
         self.model._view = self.table
         self._update_scan_buttons()
+        self._restore_last_folder()
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
@@ -290,11 +292,23 @@ class MainWindow(QMainWindow):
         )
 
     # --------------------------------------------------------------- Scan
+    def _restore_last_folder(self) -> None:
+        """Stellt den zuletzt verwendeten Ordner wieder her (ohne Auto-Scan)."""
+        last = self._settings.value("last_folder", "", type=str)
+        if last and Path(last).is_dir():
+            self._folder = Path(last)
+            self.lbl_folder.setText(str(self._folder))
+            self.lbl_folder.setStyleSheet("")
+            self._update_scan_buttons()
+            self.statusBar().showMessage("Letzten Ordner wiederhergestellt.", 5000)
+
     def on_choose_folder(self) -> None:
-        directory = QFileDialog.getExistingDirectory(self, "Medienordner wählen")
+        start_dir = str(self._folder) if self._folder else ""
+        directory = QFileDialog.getExistingDirectory(self, "Medienordner wählen", start_dir)
         if not directory:
             return
         self._folder = Path(directory)
+        self._settings.setValue("last_folder", str(self._folder))
         self.lbl_folder.setText(str(self._folder))
         self.lbl_folder.setStyleSheet("")
         self._update_scan_buttons()
@@ -347,6 +361,13 @@ class MainWindow(QMainWindow):
         if self._worker is not None:
             self._worker.deleteLater()
             self._worker = None
+
+    def closeEvent(self, event) -> None:
+        """Beim Schliessen einen laufenden Scan sauber beenden."""
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.cancel()
+            self._worker.wait(5000)
+        super().closeEvent(event)
 
     # ------------------------------------------------------------- Filter
     def apply_filters(self) -> None:
