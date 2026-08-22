@@ -36,7 +36,7 @@ jobs:
         if: runner.os == 'macOS'
         env:
           HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
-        run: brew install media-info
+        run: brew install media-info libmediainfo
       - name: Install MediaInfo (Windows)
         if: runner.os == 'Windows'
         run: choco install mediainfo --no-progress
@@ -45,26 +45,19 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       # --- Nuitka-Build ---
-      # Hinweis: pymediainfo laedt libmediainfo per ctypes. Die native Lib muss
-      # daher als Data-File mit in das Binary-Verzeichnis.
+      # Hinweis: pymediainfo laedt libmediainfo per ctypes. Auf Linux/macOS
+      # erkennt Nuitkas dll-files-Plugin die Lib automatisch und bündelt sie,
+      # solange sie beim Build installiert ist. Nur unter Windows muss die DLL
+      # manuell als Data-File angegeben werden (kein automatisches ctypes-Scan
+      # fuer WinDLL-Aufrufe).
       - name: Build with Nuitka (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo ldconfig
-          lib=$(ldconfig -p | grep 'libmediainfo\.so' | awk '{print $NF}' | head -n1)
-          if [ -z "$lib" ]; then
-            lib=$(find / -xdev -name 'libmediainfo.so*' 2>/dev/null | head -n1)
-          fi
-          if [ -z "$lib" ]; then
-            echo "::error::libmediainfo.so not found" && exit 1
-          fi
-          echo "Using libmediainfo from: $lib"
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
-            --include-data-files="$lib=pymediainfo/libmediainfo.so.0" \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
@@ -72,17 +65,11 @@ jobs:
       - name: Build with Nuitka (macOS)
         if: runner.os == 'macOS'
         run: |
-          lib=$(find "$(brew --prefix media-info)" -name 'libmediainfo*.dylib' | head -n1)
-          if [ -z "$lib" ]; then
-            echo "::error::libmediainfo dylib not found" && exit 1
-          fi
-          echo "Using libmediainfo from: $lib"
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
-            --include-data-files="$lib=pymediainfo/libmediainfo.0.dylib" \
             --macos-create-app-bundle \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
