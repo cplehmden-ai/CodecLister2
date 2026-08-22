@@ -2,6 +2,11 @@ name: Build binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      debug_console:
+        description: "Windows-Build mit sichtbarer Konsole (zum Debuggen von Abstuerzen), statt fuer den Release"
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -72,7 +77,6 @@ jobs:
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
             --include-data-dir=translations=translations \
-            --macos-create-app-bundle \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
@@ -81,6 +85,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           $dll = "C:\Program Files\MediaInfo\MediaInfo.dll"
+          # Konsole bleibt sichtbar, wenn der Lauf ueber workflow_dispatch mit debug_console=true gestartet wurde.
+          $consoleMode = "${{ github.event.inputs.debug_console }}" -eq "true" ? "force" : "disable"
           python -m nuitka `
             --onefile `
             --remove-output `
@@ -88,7 +94,7 @@ jobs:
             --include-package=pymediainfo `
             --include-data-dir=translations=translations `
             --include-data-files="$dll=MediaInfo.dll" `
-            --windows-console-mode=disable `
+            --windows-console-mode=$consoleMode `
             --output-filename=CodecLister.exe `
             --output-dir=nuitka-out `
             --assume-yes-for-downloads `
