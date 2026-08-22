@@ -34,6 +34,8 @@ jobs:
           sudo apt-get install -y libmediainfo-dev patchelf desktop-file-utils
       - name: Install MediaInfo (macOS)
         if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
         run: brew install media-info
       - name: Install MediaInfo (Windows)
         if: runner.os == 'Windows'
@@ -48,7 +50,15 @@ jobs:
       - name: Build with Nuitka (Linux)
         if: runner.os == 'Linux'
         run: |
-          lib=$(ldconfig -p | grep -m1 'libmediainfo\.so' | awk '{print $NF}')
+          sudo ldconfig
+          lib=$(ldconfig -p | grep 'libmediainfo\.so' | awk '{print $NF}' | head -n1)
+          if [ -z "$lib" ]; then
+            lib=$(find / -xdev -name 'libmediainfo.so*' 2>/dev/null | head -n1)
+          fi
+          if [ -z "$lib" ]; then
+            echo "::error::libmediainfo.so not found" && exit 1
+          fi
+          echo "Using libmediainfo from: $lib"
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
@@ -63,6 +73,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           lib=$(find "$(brew --prefix media-info)" -name 'libmediainfo*.dylib' | head -n1)
+          if [ -z "$lib" ]; then
+            echo "::error::libmediainfo dylib not found" && exit 1
+          fi
+          echo "Using libmediainfo from: $lib"
           python -m nuitka \
             --onefile \
             --enable-plugin=pyside6 \
