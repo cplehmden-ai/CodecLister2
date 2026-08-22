@@ -89,20 +89,20 @@ class MediaFilter:
 
 # Aufloesungs-Presets fuer die ComboBox in der GUI: (Anzeigename, min, max)
 RESOLUTION_PRESETS: list[tuple[str, int | None, int | None]] = [
-    ("Alle", None, None),
-    ("Schlechter als 720p", None, 719),
-    ("720p und besser", 720, None),
-    ("1080p und besser", 1080, None),
-    ("Besser als 1080p", 1081, None),
-    ("4K/2160p und besser", 2160, None),
+    ("All", None, None),
+    ("Below 720p", None, 719),
+    ("720p and above", 720, None),
+    ("1080p and above", 1080, None),
+    ("Above 1080p", 1081, None),
+    ("4K/2160p and above", 2160, None),
 ]
 
 HDR_PRESETS: list[tuple[str, set[HdrType] | None]] = [
-    ("Alle", None),
-    ("Nur SDR", {HdrType.SDR}),
-    ("Nur HDR (alle Arten)", {HdrType.HDR10, HdrType.HDR10_PLUS, HdrType.HLG, HdrType.DOLBY_VISION}),
-    ("Nur Dolby Vision", {HdrType.DOLBY_VISION}),
-    ("Nur HDR10", {HdrType.HDR10}),
-    ("Nur HDR10+", {HdrType.HDR10_PLUS}),
-    ("Nur HLG", {HdrType.HLG}),
+    ("All", None),
+    ("SDR only", {HdrType.SDR}),
+    ("HDR only (all types)", {HdrType.HDR10, HdrType.HDR10_PLUS, HdrType.HLG, HdrType.DOLBY_VISION}),
+    ("Dolby Vision only", {HdrType.DOLBY_VISION}),
+    ("HDR10 only", {HdrType.HDR10}),
+    ("HDR10+ only", {HdrType.HDR10_PLUS}),
+    ("HLG only", {HdrType.HLG}),
 ]

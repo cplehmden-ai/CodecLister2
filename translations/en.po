@@ -1,0 +1,4 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Language-Name: English\n"

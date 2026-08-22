@@ -30,10 +30,11 @@ from codeclister.core.exporter import load_json, save_csv, save_json
 from codeclister.core.filters import HDR_PRESETS, RESOLUTION_PRESETS, MediaFilter
 from codeclister.core.models import HdrType, MediaFileInfo
 from codeclister.core.scanner import ScanWorker
+from codeclister.localization import Translation, available_translations
 
 log = logging.getLogger(__name__)
 
-COLUMNS = ["Dateiname", "Größe", "Auflösung", "Video-Codec", "Audio-Codec(s) / Kanäle", "HDR"]
+COLUMNS = ["Filename", "Size", "Resolution", "Video codec", "Audio codec(s) / channels", "HDR"]
 
 HDR_COLORS = {
     HdrType.DOLBY_VISION: QColor("#7b1fa2"),
@@ -56,6 +57,13 @@ class MediaTableModel(QAbstractTableModel):
         self._visible: list[MediaFileInfo] = []
         self._filter = MediaFilter()
         self._view = None  # wird vom MainWindow gesetzt (QTableView)
+        self._translate = lambda text: text
+
+    def set_translation(self, translate) -> None:
+        self._translate = translate
+        self.headerDataChanged.emit(Qt.Horizontal, 0, len(COLUMNS) - 1)
+        if self.rowCount():
+            self.dataChanged.emit(self.index(0, 0), self.index(self.rowCount() - 1, self.columnCount() - 1))
 
     # -- Qt-Model-API ----------------------------------------------------
     def rowCount(self, parent=QModelIndex()) -> int:
@@ -66,7 +74,7 @@ class MediaTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return COLUMNS[section]
+            return self._translate(COLUMNS[section])
         return None
 
     def data(self, index, role=Qt.DisplayRole):
@@ -80,14 +88,14 @@ class MediaTableModel(QAbstractTableModel):
                 item.name,
                 item.size_human,
                 item.resolution,
-                item.video_codec or ("–" if item.is_video else "(Audio)"),
+                item.video_codec or ("–" if item.is_video else f"({self._translate('Audio')})"),
                 item.audio_codecs_text,
-                item.hdr_type.value if item.is_video else "–",
+                self._translate(item.hdr_type.value) if item.is_video else "–",
             ][column]
         if role == Qt.ToolTipRole:
             tooltip = item.path
             if item.error:
-                tooltip += f"\nFehler: {item.error}"
+                tooltip += f"\n{self._translate('Error')}: {item.error}"
             return tooltip
 
         selected = (
@@ -176,12 +184,22 @@ class MainWindow(QMainWindow):
         self._folder: Path | None = None
         self._worker: ScanWorker | None = None
         self._settings = QSettings("CodecLister", "CodecLister")
+        self._translations = available_translations()
+        self._translation_by_code = {item.language: item for item in self._translations}
+        self._language = self._settings.value("language", "de", type=str)
+        if self._language not in self._translation_by_code:
+            self._language = "en" if "en" in self._translation_by_code else self._translations[0].language
+        self._translation = self._translation_by_code[self._language]
 
         self.model = MediaTableModel(self)
         self._build_ui()
         self.model._view = self.table
+        self.model.set_translation(self._t)
         self._update_scan_buttons()
         self._restore_last_folder()
+
+    def _t(self, message: str) -> str:
+        return self._translation.gettext(message)
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
@@ -190,40 +208,48 @@ class MainWindow(QMainWindow):
 
         # Zeile 1: Ordnerwahl + Scan-Steuerung
         top = QHBoxLayout()
-        self.btn_choose = QPushButton("Ordner wählen…")
+        self.btn_choose = QPushButton(self._t("Choose folder..."))
         self.btn_choose.clicked.connect(self.on_choose_folder)
-        self.lbl_folder = QLabel("Kein Ordner ausgewählt")
+        self.lbl_folder = QLabel(self._t("No folder selected"))
         self.lbl_folder.setStyleSheet("color: palette(mid);")
-        self.chk_recursive = QCheckBox("Unterordner einbeziehen")
+        self.chk_recursive = QCheckBox(self._t("Include subfolders"))
         self.chk_recursive.setChecked(True)
-        self.btn_scan = QPushButton("Scan starten")
+        self.btn_scan = QPushButton(self._t("Start scan"))
         self.btn_scan.clicked.connect(self.on_start_scan)
-        self.btn_cancel = QPushButton("Abbrechen")
+        self.btn_cancel = QPushButton(self._t("Cancel"))
         self.btn_cancel.clicked.connect(self.on_cancel_scan)
         top.addWidget(self.btn_choose)
         top.addWidget(self.lbl_folder, stretch=1)
         top.addWidget(self.chk_recursive)
         top.addWidget(self.btn_scan)
         top.addWidget(self.btn_cancel)
+        language_label = QLabel(f"{self._t('Language')}:")
+        self.cmb_language = QComboBox()
+        for translation in self._translations:
+            self.cmb_language.addItem(translation.display_name, translation.language)
+        self.cmb_language.setCurrentIndex(max(0, self.cmb_language.findData(self._language)))
+        self.cmb_language.currentIndexChanged.connect(self.on_language_changed)
+        top.addWidget(language_label)
+        top.addWidget(self.cmb_language)
         root.addLayout(top)
 
         # Zeile 2: Filter
-        filter_box = QGroupBox("Filter")
+        filter_box = QGroupBox(self._t("Filter"))
         filters = QHBoxLayout(filter_box)
         self.cmb_resolution = QComboBox()
         for label, _, _ in RESOLUTION_PRESETS:
-            self.cmb_resolution.addItem(label)
+            self.cmb_resolution.addItem(self._t(label))
         self.cmb_hdr = QComboBox()
         for label, _ in HDR_PRESETS:
-            self.cmb_hdr.addItem(label)
+            self.cmb_hdr.addItem(self._t(label))
         self.cmb_type = QComboBox()
-        self.cmb_type.addItems(["Video + Audio", "Nur Video", "Nur Audio"])
+        self.cmb_type.addItems([self._t("Video + Audio"), self._t("Video only"), self._t("Audio only")])
         self.edit_vcodec = QLineEdit()
-        self.edit_vcodec.setPlaceholderText("Video-Codec: HEVC;AVC;!DivX")
+        self.edit_vcodec.setPlaceholderText(self._t("Video codec: HEVC;AVC;!DivX"))
         self.edit_acodec = QLineEdit()
-        self.edit_acodec.setPlaceholderText("Audio-Codec: TrueHD;!AAC")
+        self.edit_acodec.setPlaceholderText(self._t("Audio codec: TrueHD;!AAC"))
         self.edit_name = QLineEdit()
-        self.edit_name.setPlaceholderText("Dateiname: film;serie;!sample")
+        self.edit_name.setPlaceholderText(self._t("Filename: film;series;!sample"))
         for widget in (
             self.cmb_resolution, self.cmb_hdr, self.cmb_type,
             self.edit_vcodec, self.edit_acodec, self.edit_name,
@@ -262,13 +288,13 @@ class MainWindow(QMainWindow):
 
         # Zeile 3: Speichern/Laden + Zaehler
         bottom = QHBoxLayout()
-        self.btn_save_json = QPushButton("Liste speichern (JSON)…")
+        self.btn_save_json = QPushButton(self._t("Save list (JSON)..."))
         self.btn_save_json.clicked.connect(self.on_save_json)
-        self.btn_save_csv = QPushButton("CSV exportieren…")
+        self.btn_save_csv = QPushButton(self._t("Export CSV..."))
         self.btn_save_csv.clicked.connect(self.on_save_csv)
-        self.btn_load = QPushButton("Liste laden (JSON)…")
+        self.btn_load = QPushButton(self._t("Load list (JSON)..."))
         self.btn_load.clicked.connect(self.on_load_json)
-        self.lbl_count = QLabel("0 Dateien")
+        self.lbl_count = QLabel(f"0 {self._t('files')}")
         bottom.addWidget(self.btn_save_json)
         bottom.addWidget(self.btn_save_csv)
         bottom.addWidget(self.btn_load)
@@ -281,7 +307,7 @@ class MainWindow(QMainWindow):
         self.progress.setMaximumWidth(360)
         self.progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.progress)
-        self.statusBar().showMessage("Bereit.")
+        self.statusBar().showMessage(self._t("Ready."))
 
         self.setCentralWidget(central)
 
@@ -292,8 +318,39 @@ class MainWindow(QMainWindow):
 
     def _update_count(self) -> None:
         self.lbl_count.setText(
-            f"{len(self.model.visible_items)} / {len(self.model.all_items)} Dateien"
+            f"{len(self.model.visible_items)} / {len(self.model.all_items)} {self._t('files')}"
         )
+
+    def on_language_changed(self, index: int) -> None:
+        language = self.cmb_language.itemData(index)
+        if not language or language == self._language:
+            return
+        state = {
+            "resolution": self.cmb_resolution.currentIndex(),
+            "hdr": self.cmb_hdr.currentIndex(),
+            "type": self.cmb_type.currentIndex(),
+            "vcodec": self.edit_vcodec.text(),
+            "acodec": self.edit_acodec.text(),
+            "name": self.edit_name.text(),
+            "recursive": self.chk_recursive.isChecked(),
+        }
+        self._language = language
+        self._translation = self._translation_by_code[language]
+        self._settings.setValue("language", language)
+        self._build_ui()
+        self.model._view = self.table
+        self.model.set_translation(self._t)
+        if self._folder is not None:
+            self.lbl_folder.setText(str(self._folder))
+            self.lbl_folder.setStyleSheet("")
+        self.cmb_resolution.setCurrentIndex(state["resolution"])
+        self.cmb_hdr.setCurrentIndex(state["hdr"])
+        self.cmb_type.setCurrentIndex(state["type"])
+        self.edit_vcodec.setText(state["vcodec"])
+        self.edit_acodec.setText(state["acodec"])
+        self.edit_name.setText(state["name"])
+        self.chk_recursive.setChecked(state["recursive"])
+        self.apply_filters()
 
     # --------------------------------------------------------------- Scan
     def _restore_last_folder(self) -> None:
@@ -304,11 +361,11 @@ class MainWindow(QMainWindow):
             self.lbl_folder.setText(str(self._folder))
             self.lbl_folder.setStyleSheet("")
             self._update_scan_buttons()
-            self.statusBar().showMessage("Letzten Ordner wiederhergestellt.", 5000)
+            self.statusBar().showMessage(self._t("Last folder restored."), 5000)
 
     def on_choose_folder(self) -> None:
         start_dir = str(self._folder) if self._folder else ""
-        directory = QFileDialog.getExistingDirectory(self, "Medienordner wählen", start_dir)
+        directory = QFileDialog.getExistingDirectory(self, self._t("Select media folder"), start_dir)
         if not directory:
             return
         self._folder = Path(directory)
@@ -325,7 +382,7 @@ class MainWindow(QMainWindow):
         self._update_count()
         self.progress.setVisible(True)
         self.progress.setRange(0, 0)  # unbestimmt, bis scan_started kommt
-        self.statusBar().showMessage("Suche Mediendateien…")
+        self.statusBar().showMessage(self._t("Search media files..."))
         self._update_scan_buttons(scanning=True)
 
         self._worker = ScanWorker(self._folder, self.chk_recursive.isChecked(), self)
@@ -337,13 +394,13 @@ class MainWindow(QMainWindow):
 
     def on_cancel_scan(self) -> None:
         if self._worker is not None:
-            self.statusBar().showMessage("Breche ab…")
+            self.statusBar().showMessage(self._t("Cancelling..."))
             self._worker.cancel()
 
     def on_scan_started(self, total: int) -> None:
         self.progress.setRange(0, max(total, 1))
         self.progress.setValue(0)
-        self.statusBar().showMessage(f"{total} Mediendateien gefunden.")
+        self.statusBar().showMessage(self._t("{count} media files found.").format(count=total))
 
     def on_file_scanned(self, item: MediaFileInfo) -> None:
         self.model.add_item(item)
@@ -357,10 +414,10 @@ class MainWindow(QMainWindow):
     def on_scan_finished(self, completed: bool) -> None:
         self.progress.setVisible(False)
         self._update_scan_buttons()
-        text = "Scan abgeschlossen." if completed else "Scan abgebrochen."
+        text = self._t("Scan completed.") if completed else self._t("Scan cancelled.")
         errors = sum(1 for i in self.model.all_items if i.error)
         if errors:
-            text += f" ({errors} Datei(en) nicht lesbar)"
+            text += f" ({self._t('{count} file(s) unreadable').format(count=errors)})"
         self.statusBar().showMessage(text, 8000)
         if self._worker is not None:
             self._worker.deleteLater()
@@ -398,10 +455,10 @@ class MainWindow(QMainWindow):
 
     def on_save_json(self) -> None:
         if not self.model.all_items:
-            QMessageBox.information(self, __app_name__, "Die Liste ist leer.")
+            QMessageBox.information(self, __app_name__, self._t("The list is empty."))
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Liste speichern", "codeclister.json", "CodecLister-Liste (*.json)"
+            self, self._t("Save list (JSON)..."), "codeclister.json", "CodecLister (*.json)"
         )
         if not path:
             return
@@ -409,36 +466,36 @@ class MainWindow(QMainWindow):
             # Es wird die gefilterte Sicht gespeichert, wenn Filter aktiv sind.
             items = self.model.visible_items
             save_json(items, Path(path), self._current_folder_text())
-            self.statusBar().showMessage(f"Gespeichert: {path}", 8000)
+            self.statusBar().showMessage(self._t("List saved: {path}").format(path=path), 8000)
         except OSError as exc:
-            QMessageBox.critical(self, __app_name__, f"Speichern fehlgeschlagen:\n{exc}")
+            QMessageBox.critical(self, __app_name__, self._t("Saving failed:\n{error}").format(error=exc))
 
     def on_save_csv(self) -> None:
         if not self.model.all_items:
-            QMessageBox.information(self, __app_name__, "Die Liste ist leer.")
+            QMessageBox.information(self, __app_name__, self._t("The list is empty."))
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "CSV exportieren", "codeclister.csv", "CSV-Datei (*.csv)"
+            self, self._t("Export CSV..."), "codeclister.csv", "CSV (*.csv)"
         )
         if not path:
             return
         try:
             save_csv(self.model.visible_items, Path(path))
-            self.statusBar().showMessage(f"Exportiert: {path}", 8000)
+            self.statusBar().showMessage(self._t("Exported: {path}").format(path=path), 8000)
         except OSError as exc:
-            QMessageBox.critical(self, __app_name__, f"Export fehlgeschlagen:\n{exc}")
+            QMessageBox.critical(self, __app_name__, self._t("Export failed:\n{error}").format(error=exc))
 
     def on_load_json(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Liste laden", "", "CodecLister-Liste (*.json)"
+            self, self._t("Load list (JSON)..."), "", "CodecLister (*.json)"
         )
         if not path:
             return
         try:
             items = load_json(Path(path))
         except (OSError, ValueError, KeyError) as exc:
-            QMessageBox.critical(self, __app_name__, f"Laden fehlgeschlagen:\n{exc}")
+            QMessageBox.critical(self, __app_name__, self._t("Loading failed:\n{error}").format(error=exc))
             return
         self.model.set_items(items)
         self._update_count()
-        self.statusBar().showMessage(f"{len(items)} Einträge geladen.", 8000)
+        self.statusBar().showMessage(self._t("{count} entries loaded.").format(count=len(items)), 8000)

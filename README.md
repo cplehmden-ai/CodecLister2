@@ -29,6 +29,8 @@ Die Auflösungsfilter berücksichtigen sowohl die tatsächliche Höhe als auch d
 `1440×1080` als Full HD sowie `960×720` als 720p eingestuft. Das gilt analog
 für UHD/4K-Formate und funktioniert damit auch bei 4:3-Remasters.
 - 🔃 Sortierbare Tabelle (Klick auf Spaltenkopf)
+- 🌐 GUI auf Deutsch oder Englisch umschaltbar; eigene Sprachen über
+  `translations/<code>.po` ergänzbar (siehe [translations/README.md](translations/README.md))
 - 💾 JSON speichern/laden, CSV-Export
 - 🖥️ GUI mit [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)
 - 📦 Fertige Binaries via GitHub Actions + [Nuitka](https://nuitka.net/)

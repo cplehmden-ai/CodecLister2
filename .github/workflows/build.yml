@@ -52,6 +52,7 @@ jobs:
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
+            --include-data-dir=translations=translations \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
@@ -63,6 +64,7 @@ jobs:
             --onefile \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
+            --include-data-dir=translations=translations \
             --macos-create-app-bundle \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
@@ -76,6 +78,7 @@ jobs:
             --onefile `
             --enable-plugin=pyside6 `
             --include-package=pymediainfo `
+            --include-data-dir=translations=translations `
             --include-data-files="$dll=MediaInfo.dll" `
             --windows-console-mode=disable `
             --output-filename=CodecLister.exe `
