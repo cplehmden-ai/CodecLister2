@@ -34,8 +34,8 @@ class MediaFilter:
     """Beschreibt aktive Filterkriterien.
 
     Alle Kriterien sind UND-verknuepft; ``None``/leere Werte deaktivieren
-    das jeweilige Kriterium. Codec- und Namensabfragen sind
-    Teilstring-Suchen (Gross-/Kleinschreibung ignoriert).
+    das jeweilige Kriterium. Codec- und Namensabfragen sind Teilstring-Suchen
+    (Gross-/Kleinschreibung ignoriert) und unterstützen ``;``, ``!`` und ``-``.
     """
 
     min_height: int | None = None
@@ -82,7 +82,7 @@ class MediaFilter:
         if self.audio_codec_query:
             if not codec_query_matches(self.audio_codec_query, info.audio_codecs):
                 return False
-        if self.name_query and self.name_query.lower() not in info.name.lower():
+        if self.name_query and not codec_query_matches(self.name_query, [info.name]):
             return False
         return True
 

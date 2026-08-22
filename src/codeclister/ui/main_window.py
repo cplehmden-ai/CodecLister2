@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
         self.edit_acodec = QLineEdit()
         self.edit_acodec.setPlaceholderText("Audio-Codec: TrueHD;!AAC")
         self.edit_name = QLineEdit()
-        self.edit_name.setPlaceholderText("Dateiname enthält…")
+        self.edit_name.setPlaceholderText("Dateiname: film;serie;!sample")
         for widget in (
             self.cmb_resolution, self.cmb_hdr, self.cmb_type,
             self.edit_vcodec, self.edit_acodec, self.edit_name,

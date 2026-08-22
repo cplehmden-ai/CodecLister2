@@ -108,6 +108,13 @@ def test_filter_name_query():
     assert not f.matches(make_info(name="serie.mkv"))
 
 
+def test_filter_name_query_supports_or_and_exclusion():
+    assert MediaFilter(name_query="film;serie").matches(make_info(name="Serie S01.mkv"))
+    assert not MediaFilter(name_query="!sample").matches(make_info(name="sample.mkv"))
+    assert MediaFilter(name_query="!sample").matches(make_info(name="film.mkv"))
+    assert not MediaFilter(name_query="film;serie;!S02").matches(make_info(name="Serie S02.mkv"))
+
+
 def test_filter_only_videos_only_audio():
     assert not MediaFilter(only_videos=True).matches(make_info(is_video=False))
     assert not MediaFilter(only_audio=True).matches(make_info(is_video=True))
