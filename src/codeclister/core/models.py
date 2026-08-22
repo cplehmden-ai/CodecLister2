@@ -19,10 +19,13 @@ class HdrType(enum.Enum):
 
     @classmethod
     def from_label(cls, label: str) -> "HdrType":
+        if label == cls.UNKNOWN.value:
+            return cls.SDR
         for member in cls:
             if member.value == label:
                 return member
-        return cls.UNKNOWN
+        # Ältere Listen und fehlende Farbinformationen gelten als SDR.
+        return cls.SDR
 
 
 @dataclass

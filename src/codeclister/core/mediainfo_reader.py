@@ -111,7 +111,8 @@ def detect_hdr_type(video_track: Any) -> HdrType:
         return HdrType.HDR10
     if primaries or transfer:
         return HdrType.SDR
-    return HdrType.UNKNOWN
+    # Wenn kein HDR-Merkmal vorhanden ist, ist das Video SDR.
+    return HdrType.SDR
 
 
 def analyze_file(path: Path) -> MediaFileInfo:

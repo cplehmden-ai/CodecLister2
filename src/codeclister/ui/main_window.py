@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QGroupBox,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -249,6 +250,9 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setColumnWidth(0, 320)
+        self.table.setColumnWidth(4, 240)
+        self.table.horizontalHeader().setMinimumSectionSize(120)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Interactive)
         # Bei Selektionswechsel Neuzeichnen, damit die HDR-Farbe korrekt
         # ein-/ausgeblendet wird.
         self.table.selectionModel().selectionChanged.connect(

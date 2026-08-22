@@ -44,8 +44,8 @@ def test_detect_sdr():
     assert detect_hdr_type(track) is HdrType.SDR
 
 
-def test_detect_unknown_without_color_info():
-    assert detect_hdr_type(fake_track()) is HdrType.UNKNOWN
+def test_detect_video_without_hdr_info_as_sdr():
+    assert detect_hdr_type(fake_track()) is HdrType.SDR
 
 
 def test_normalize_audio_channels_common_layouts():

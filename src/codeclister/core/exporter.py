@@ -17,7 +17,7 @@ CSV_COLUMNS = [
     ("Größe (Bytes)", "size_bytes"),
     ("Auflösung", "resolution"),
     ("Video-Codec", "video_codec"),
-    ("Audio-Codecs", "audio_codecs_text"),
+    ("Audio-Codecs / Kanäle", "audio_codecs_text"),
     ("HDR", "hdr_label"),
     ("Pfad", "path"),
     ("Fehler", "error"),
