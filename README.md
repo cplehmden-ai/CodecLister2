@@ -1,69 +1,67 @@
 # CodecLister
 
-Ein plattformunabhängiges Desktop-Tool (Windows / Linux / macOS), das einen Ordner
-nach Video- und Audiodateien durchsucht und deren technische Details in einer
-filterbaren Liste anzeigt:
+A cross-platform desktop tool for Windows, Linux, and macOS that scans a
+folder for video and audio files and displays their technical details in a
+filterable list:
 
-- **Dateiname** und **Dateigröße**
-- **Video-Codec** (z. B. H.264/AVC, H.265/HEVC, AV1, VP9 …)
-- **Audio-Codec(s)** (inkl. Erkennung von Atmos / DTS:X, sofern von MediaInfo gemeldet)
-- **Auflösung** (Breite × Höhe)
-- **Dynamikumfang**: SDR / HDR10 / HDR10+ / HLG / Dolby Vision
+- **Filename** and **file size**
+- **Video codec** such as H.264/AVC, H.265/HEVC, AV1, or VP9
+- **Audio codec(s)** including channel count and Atmos/DTS:X when reported by MediaInfo
+- **Resolution** (width x height)
+- **Dynamic range**: SDR, HDR10, HDR10+, HLG, or Dolby Vision
 
-Die Ergebnisliste lässt sich als **JSON speichern und wieder laden** (zum
-Weiternutzen) oder als **CSV exportieren** (z. B. für Excel).
+Results can be saved and loaded as **JSON** for later use or exported as
+**CSV** for spreadsheets such as Excel.
 
 ![Status](https://img.shields.io/badge/status-early%20development-orange)
 
 ## Features
 
-- 📁 Ordnerwahl inkl. optionalem rekursivem Scan
-- ⏳ Fortschrittsbalken mit Abbruchmöglichkeit während des Einlesens
-- 🔎 Filter: Auflösung (z. B. „schlechter als 720p", „1080p und besser", „4K"),
-  HDR-Typ, Video-/Audio-Codec, Dateiname, Medientyp. Codec-Filter unterstützen
-  mehrere Begriffe mit `;` als ODER-Suche sowie Ausschlüsse mit `!` oder `-`,
-  z. B. `DivX;Xvid`, `!HEVC` oder `DivX;Xvid;!HEVC`.
+- Folder selection with optional recursive scanning
+- Progress bar with cancellation while scanning
+- Filters for resolution, HDR type, video/audio codec, filename, and media type
+- Codec filters support semicolon-separated OR terms and exclusions with `!` or `-`:
+  `DivX;Xvid`, `!HEVC`, or `DivX;Xvid;!HEVC`
+- Resolution filters support widescreen, 4:3 remasters, and CinemaScope formats.
+  For example, `1920x960` and `1440x1080` count as Full HD, `960x720` as 720p,
+  and `2880x2160` as UHD/4K
+- Sortable table by clicking a column header
+- Save/load JSON lists and export CSV
+- GUI built with [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)
+- GUI language switch between German and English
+- Custom languages can be added through `translations/<code>.po`; see
+  [translations/README.md](translations/README.md)
+- Ready for binary builds via GitHub Actions and [Nuitka](https://nuitka.net/)
 
-Die Auflösungsfilter berücksichtigen sowohl die tatsächliche Höhe als auch die
-16:9-equivalente Breite. Dadurch werden beispielsweise `1920×960` und
-`1440×1080` als Full HD sowie `960×720` als 720p eingestuft. Das gilt analog
-für UHD/4K-Formate und funktioniert damit auch bei 4:3-Remasters.
-- 🔃 Sortierbare Tabelle (Klick auf Spaltenkopf)
-- 🌐 GUI auf Deutsch oder Englisch umschaltbar; eigene Sprachen über
-  `translations/<code>.po` ergänzbar (siehe [translations/README.md](translations/README.md))
-- 💾 JSON speichern/laden, CSV-Export
-- 🖥️ GUI mit [PySide6](https://doc.qt.io/qtforpython/) (Qt 6)
-- 📦 Fertige Binaries via GitHub Actions + [Nuitka](https://nuitka.net/)
+## Requirements
 
-## Voraussetzungen
+- **Python >= 3.10**
+- **libmediainfo**, the native library required by `pymediainfo`:
 
-- **Python ≥ 3.10**
-- **libmediainfo** (native Bibliothek, wird von `pymediainfo` benötigt):
+  | Platform | Installation |
+  |----------|--------------|
+  | Windows  | Download the [MediaInfo DLL](https://mediaarea.net/en/MediaInfo/Download/Windows) or run `choco install mediainfo` |
+  | Linux    | `sudo apt install libmediainfo-dev` on Debian/Ubuntu, or install the distribution's MediaInfo package |
+  | macOS    | `brew install media-info` |
 
-  | Plattform | Installation |
-  |-----------|--------------|
-  | Windows   | [MediaInfo-DLL](https://mediaarea.net/de/MediaInfo/Download/Windows) herunterladen (Installer genügt) oder `choco install mediainfo` |
-  | Linux     | `sudo apt install libmediainfo-dev` (Debian/Ubuntu) bzw. `mediainfo`-Paket der Distribution |
-  | macOS     | `brew install media-info` |
-
-## Installation & Start (Entwicklung)
+## Installation and start
 
 ```bash
-git clone https://github.com/<DEIN-USER>/CodecLister2.git
+git clone https://github.com/cplehmden-ai/CodecLister2.git
 cd CodecLister2
 
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
+# Windows:  .venv\\Scripts\\activate
 # Linux/Mac: source .venv/bin/activate
 
 pip install -r requirements-dev.txt
-pip install -e .          # installiert das Paket inkl. 'codeclister'-Kommando
+pip install -e .
 
-codeclister               # oder: python -m codeclister
+codeclister               # or: python -m codeclister
 ```
 
-> Hinweis: Ohne `pip install -e .` muss `PYTHONPATH` auf `src` zeigen
-> (die mitgelieferte VS-Code-Launch-Konfiguration macht das automatisch).
+Without `pip install -e .`, set `PYTHONPATH` to `src` instead. The included
+VS Code launch configuration does this automatically.
 
 ## Tests
 
@@ -71,51 +69,53 @@ codeclister               # oder: python -m codeclister
 pytest
 ```
 
-## Lokaler Binary-Build mit Nuitka
+## Local binary build with Nuitka
 
 ```bash
 pip install nuitka ordered-set zstandard
 
-# Windows (Beispiel):
+# Windows example:
 python -m nuitka --onefile --enable-plugin=pyside6 ^
   --include-package=pymediainfo ^
-  --include-data-files="C:\Program Files\MediaInfo\MediaInfo.dll=MediaInfo.dll" ^
+  --include-data-dir=translations=translations ^
+  --include-data-files="C:\\Program Files\\MediaInfo\\MediaInfo.dll=MediaInfo.dll" ^
   --windows-console-mode=disable --output-filename=CodecLister.exe ^
   src/codeclister/__main__.py
 ```
 
-Linux/macOS analog ohne `--windows-console-mode` (Details siehe
-[.github/workflows/build.yml](.github/workflows/build.yml)).
+On Linux/macOS, omit `--windows-console-mode`. See
+[.github/workflows/build.yml](.github/workflows/build.yml) for details.
 
-## Fertige Binaries (GitHub Actions)
+## Release binaries
 
-Der Workflow [.github/workflows/build.yml](.github/workflows/build.yml) baut bei
-jedem Tag `v*` (oder manuell per *workflow_dispatch*) One-File-Binaries für
-**Windows, Linux und macOS** und hängt sie an ein GitHub-Release:
+The workflow [.github/workflows/build.yml](.github/workflows/build.yml) builds
+one-file binaries for Windows, Linux, and macOS on every `v*` tag, or manually
+via `workflow_dispatch`, and attaches them to a GitHub release:
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-## Projektstruktur
+## Project structure
 
 ```
 src/codeclister/
 ├── __main__.py              # python -m codeclister
-├── app.py                   # QApplication-Setup
+├── app.py                   # QApplication setup
 ├── core/
 │   ├── models.py            # MediaFileInfo, HdrType
-│   ├── mediainfo_reader.py  # pymediainfo-Analyse, HDR-/Codec-Erkennung
-│   ├── scanner.py           # Dateisuche + QThread-Scan-Worker (Fortschritt)
-│   ├── filters.py           # MediaFilter + Auflösungs-/HDR-Presets
-│   └── exporter.py          # JSON speichern/laden, CSV-Export
+│   ├── mediainfo_reader.py  # pymediainfo analysis and HDR/codec detection
+│   ├── scanner.py           # file search and QThread scan worker
+│   ├── filters.py           # MediaFilter and resolution/HDR presets
+│   └── exporter.py          # JSON save/load and CSV export
 └── ui/
-    └── main_window.py       # Hauptfenster, Tabelle, Filter, Fortschritt
-tests/                       # pytest-Tests (Filter, HDR-Erkennung, Export)
-.github/workflows/build.yml  # Nuitka-Matrix-Build + Release
+    └── main_window.py       # main window, table, filters, progress
+tests/                       # pytest tests
+translations/                # built-in and custom PO translations
+.github/workflows/build.yml  # Nuitka matrix build and release
 ```
 
-## Lizenz
+## License
 
 [GPL-3.0-or-later](LICENSE)
