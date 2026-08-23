@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       debug_console:
-        description: "Windows-Build mit sichtbarer Konsole (zum Debuggen von Abstuerzen), statt fuer den Release"
+        description: "Windows-Build with visible console (for debugging crashes), instead of for the release"
         type: boolean
         default: false
   push:
@@ -31,7 +31,7 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      # --- Native MediaInfo-Bibliothek (Laufzeit-Abhaengigkeit von pymediainfo) ---
+      # --- Native MediaInfo library (runtime dependency of pymediainfo) ---
       - name: Install MediaInfo (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -52,11 +52,11 @@ jobs:
           python -m pip install -e .
 
       # --- Nuitka-Build ---
-      # Hinweis: pymediainfo laedt libmediainfo per ctypes. Auf Linux/macOS
-      # erkennt Nuitkas dll-files-Plugin die Lib automatisch und bündelt sie,
-      # solange sie beim Build installiert ist. Nur unter Windows muss die DLL
-      # manuell als Data-File angegeben werden (kein automatisches ctypes-Scan
-      # fuer WinDLL-Aufrufe).
+      # Note: pymediainfo loads libmediainfo via ctypes. On Linux/macOS
+      # Nuitka's dll-files plugin automatically detects the library and bundles it,
+      # as long as it is installed at build time. Only on Windows must the DLL
+      # be specified manually as a data file (no automatic ctypes scan
+      # for WinDLL calls).
       - name: Build with Nuitka (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -119,8 +119,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-      # Verhindert "Not Found"-Fehler von action-gh-release, wenn fuer den Tag
-      # bereits ein (z. B. manuell geloeschtes/inkonsistentes) Release existiert.
+      # Prevent "Not Found" error from action-gh-release if a release for the tag
+      # already exists (e.g., manually deleted/inconsistent).
       - name: Delete existing release for this tag (if any)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
