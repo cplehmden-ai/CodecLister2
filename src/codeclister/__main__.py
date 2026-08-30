@@ -1,4 +1,4 @@
-"""Einstiegspunkt fuer ``python -m codeclister``."""
+"""Einstiegspunkt für ``python -m codeclister``."""
 
 from codeclister.app import main
 
