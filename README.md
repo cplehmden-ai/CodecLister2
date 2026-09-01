@@ -78,8 +78,10 @@ pip install nuitka ordered-set zstandard
 # Windows example:
 python -m nuitka --onefile --enable-plugin=pyside6 ^
   --include-package=pymediainfo ^
+  --include-data-dir=src\codeclister\assets=codeclister\assets ^
   --include-data-dir=translations=translations ^
   --include-data-files="C:\\Program Files\\MediaInfo\\MediaInfo.dll=MediaInfo.dll" ^
+  --windows-icon-from-ico=src\codeclister\assets\icon.ico ^
   --windows-console-mode=disable --output-filename=CodecLister.exe ^
   src/codeclister/__main__.py
 ```
@@ -104,6 +106,7 @@ git push origin v1.0.0
 src/codeclister/
 ├── __main__.py              # python -m codeclister
 ├── app.py                   # QApplication setup
+├── assets/                  # banner.png, icon.png, icon.ico
 ├── core/
 │   ├── models.py            # MediaFileInfo, HdrType
 │   ├── mediainfo_reader.py  # pymediainfo analysis and HDR/codec detection

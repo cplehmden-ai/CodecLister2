@@ -37,6 +37,7 @@ class MediaFileInfo:
     size_bytes: int
     width: int | None = None
     height: int | None = None
+    frame_rate: float | None = None
     video_codec: str | None = None
     audio_codecs: list[str] = field(default_factory=list)
     hdr_type: HdrType = HdrType.UNKNOWN
@@ -46,7 +47,10 @@ class MediaFileInfo:
     @property
     def resolution(self) -> str:
         if self.width and self.height:
-            return f"{self.width} × {self.height}"
+            resolution = f"{self.width} × {self.height}"
+            if self.frame_rate is not None:
+                return f"{resolution} ({self.frame_rate:g} fps)"
+            return resolution
         return "–"
 
     @property

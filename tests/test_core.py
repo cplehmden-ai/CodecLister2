@@ -3,7 +3,12 @@
 from types import SimpleNamespace
 
 from codeclister.core.exporter import load_json, save_csv, save_json
-from codeclister.core.mediainfo_reader import detect_hdr_type, normalize_audio_channels
+from codeclister.core.mediainfo_reader import (
+    detect_hdr_type,
+    frame_rate_from_track,
+    normalize_audio_channels,
+    normalize_frame_rate,
+)
 from codeclister.core.models import HdrType, MediaFileInfo
 
 
@@ -59,6 +64,17 @@ def test_normalize_audio_channels_uses_channel_layout():
     assert normalize_audio_channels("", "L R C LFE Ls Rs") == "5.1"
 
 
+def test_normalize_frame_rate():
+    assert normalize_frame_rate("23.976") == 23.976
+    assert normalize_frame_rate("25.000 FPS") == 25.0
+    assert normalize_frame_rate("") is None
+
+
+def test_frame_rate_uses_original_frame_rate_as_fallback():
+    track = SimpleNamespace(frame_rate=None, original_frame_rate="29.970 FPS")
+    assert frame_rate_from_track(track) == 29.97
+
+
 def sample_item() -> MediaFileInfo:
     return MediaFileInfo(
         path="/media/film.mkv",
@@ -71,6 +87,18 @@ def sample_item() -> MediaFileInfo:
         hdr_type=HdrType.DOLBY_VISION,
         is_video=True,
     )
+
+
+def test_resolution_includes_frame_rate_when_available():
+    item = MediaFileInfo(
+        path="/media/film.mkv",
+        name="film.mkv",
+        size_bytes=1,
+        width=3840,
+        height=2160,
+        frame_rate=23.976,
+    )
+    assert item.resolution == "3840 × 2160 (23.976 fps)"
 
 
 def test_json_roundtrip(tmp_path):

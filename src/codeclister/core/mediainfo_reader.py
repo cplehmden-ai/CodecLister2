@@ -86,6 +86,25 @@ def normalize_audio_channels(channel_count: str, channel_layout: str) -> str | N
     return common_layouts.get(channels, f"{channels}.0")
 
 
+def normalize_frame_rate(value: str) -> float | None:
+    """Liest die MediaInfo-Bildrate in numerischer Form aus."""
+    value = value.strip().replace(",", ".")
+    if not value:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        match = re.search(r"\d+(?:\.\d+)?", value)
+        return float(match.group()) if match else None
+
+
+def frame_rate_from_track(video_track: Any) -> float | None:
+    """Liest die reguläre oder, falls nötig, die originale Bildrate aus."""
+    return normalize_frame_rate(
+        _get(video_track, "frame_rate") or _get(video_track, "original_frame_rate")
+    )
+
+
 def detect_hdr_type(video_track: Any) -> HdrType:
     """Ermittelt SDR / HDR10 / HDR10+ / HLG / Dolby Vision aus einem Video-Track.
 
@@ -139,6 +158,7 @@ def analyze_file(path: Path) -> MediaFileInfo:
         info.is_video = True
         info.width = int(video_track.width) if video_track.width else None
         info.height = int(video_track.height) if video_track.height else None
+        info.frame_rate = frame_rate_from_track(video_track)
         info.video_codec = normalize_video_codec(
             _get(video_track, "format"), _get(video_track, "format_profile")
         )

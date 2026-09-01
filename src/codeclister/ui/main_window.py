@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSettings, Qt
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -46,6 +46,7 @@ HDR_COLORS = {
 
 SELECTION_BG = QColor("#1a5fb4")
 SELECTION_FG = QColor("#ffffff")
+ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets"
 
 
 class MediaTableModel(QAbstractTableModel):
@@ -208,9 +209,18 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         central = QWidget(self)
         root = QVBoxLayout(central)
+        root.setContentsMargins(0, 0, 0, 0)
+
+        banner = QLabel()
+        banner.setAlignment(Qt.AlignCenter)
+        banner.setStyleSheet("background-color: #000000;")
+        banner_pixmap = QPixmap(str(ASSETS_DIR / "banner.png"))
+        banner.setPixmap(banner_pixmap.scaledToHeight(160, Qt.SmoothTransformation))
+        root.addWidget(banner)
 
         # Zeile 1: Ordnerwahl + Scan-Steuerung
         top = QHBoxLayout()
+        top.setContentsMargins(9, 0, 9, 0)
         self.btn_choose = QPushButton(self._t("Choose folder..."))
         self.btn_choose.clicked.connect(self.on_choose_folder)
         self.lbl_folder = QLabel(self._t("No folder selected"))
@@ -279,8 +289,11 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setColumnWidth(0, 320)
-        self.table.setColumnWidth(4, 240)
-        self.table.horizontalHeader().setMinimumSectionSize(120)
+        self.table.setColumnWidth(1, 105)
+        self.table.setColumnWidth(2, 200)
+        self.table.setColumnWidth(4, 200)
+        self.table.setColumnWidth(5, 105)
+        self.table.horizontalHeader().setMinimumSectionSize(100)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Interactive)
         # Bei Selektionswechsel Neuzeichnen, damit die HDR-Farbe korrekt
         # ein-/ausgeblendet wird.
