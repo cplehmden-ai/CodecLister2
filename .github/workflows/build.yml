@@ -105,6 +105,7 @@ jobs:
           $env:CODECLISTER_VERSION = python -c "from codeclister import __version__; print(__version__)"
           $env:CODECLISTER_SOURCE_DIR = (Resolve-Path nuitka-out).Path
           $env:CODECLISTER_OUTPUT_DIR = (Resolve-Path release).Path
+          $env:CODECLISTER_PROJECT_DIR = (Get-Location).Path
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\windows\CodecLister.iss
 
       - name: Build macOS disk image
@@ -121,10 +122,11 @@ jobs:
             --include-data-dir=translations=translations \
             --macos-create-app-bundle \
             --macos-app-icon=src/codeclister/assets/icon.icns \
+            --python-flag=-m \
             --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
-            src/codeclister/__main__.py
+            src/codeclister
           hdiutil create \
             -volname CodecLister \
             -srcfolder nuitka-out/CodecLister.app \

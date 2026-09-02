@@ -3,6 +3,7 @@
 #define MyAppExeName "CodecLister.exe"
 #define MyAppSourceDir GetEnv("CODECLISTER_SOURCE_DIR")
 #define MyAppOutputDir GetEnv("CODECLISTER_OUTPUT_DIR")
+#define MyAppProjectDir GetEnv("CODECLISTER_PROJECT_DIR")
 
 [Setup]
 AppId={{5DDAC6CA-3B1D-4DB9-AFE2-CB1127FA055C}
@@ -14,7 +15,7 @@ DefaultGroupName=CodecLister
 DisableProgramGroupPage=yes
 OutputDir={#MyAppOutputDir}
 OutputBaseFilename=CodecLister-Setup-{#MyAppVersion}-x64
-SetupIconFile=src\codeclister\assets\icon.ico
+SetupIconFile={#MyAppProjectDir}\src\codeclister\assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
