@@ -118,7 +118,7 @@ jobs:
             --remove-output \
             --enable-plugin=pyside6 \
             --include-package=pymediainfo \
-            --include-data-dir=src/codeclister/assets=codeclister/assets \
+            --include-data-dir=src/codeclister/assets=assets \
             --include-data-dir=translations=translations \
             --macos-create-app-bundle \
             --macos-app-icon=src/codeclister/assets/icon.icns \

@@ -31,6 +31,7 @@ from codeclister.core.filters import HDR_PRESETS, RESOLUTION_PRESETS, MediaFilte
 from codeclister.core.models import HdrType, MediaFileInfo
 from codeclister.core.scanner import ScanWorker
 from codeclister.localization import Translation, available_translations
+from codeclister.resources import assets_dir
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,6 @@ HDR_COLORS = {
 
 SELECTION_BG = QColor("#1a5fb4")
 SELECTION_FG = QColor("#ffffff")
-ASSETS_DIR = Path(__file__).resolve().parents[1] / "assets"
 
 
 class MediaTableModel(QAbstractTableModel):
@@ -220,7 +220,7 @@ class MainWindow(QMainWindow):
         banner = QLabel()
         banner.setAlignment(Qt.AlignCenter)
         banner.setStyleSheet("background-color: #000000;")
-        banner_pixmap = QPixmap(str(ASSETS_DIR / "banner.png"))
+        banner_pixmap = QPixmap(str(assets_dir() / "banner.png"))
         banner.setPixmap(banner_pixmap.scaledToHeight(160, Qt.SmoothTransformation))
         root.addWidget(banner)
 
