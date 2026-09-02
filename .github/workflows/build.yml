@@ -1,12 +1,7 @@
-name: Build binaries
+name: Build installers
 
 on:
   workflow_dispatch:
-    inputs:
-      debug_console:
-        description: "Windows-Build with visible console (for debugging crashes), instead of for the release"
-        type: boolean
-        default: false
   push:
     tags:
       - "v*"
@@ -16,12 +11,31 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - name: Windows x64
+            runner: windows-latest
+            platform: windows
+          - name: Linux x64
+            runner: ubuntu-22.04
+            platform: linux
+            deb_architecture: amd64
+          - name: Linux ARM64
+            runner: ubuntu-24.04-arm
+            platform: linux
+            deb_architecture: arm64
+          - name: macOS Intel
+            runner: macos-13
+            platform: macos
+            macos_architecture: x86_64
+          - name: macOS Apple Silicon
+            runner: macos-14
+            platform: macos
+            macos_architecture: arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -31,35 +45,30 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      # --- Native MediaInfo library (runtime dependency of pymediainfo) ---
       - name: Install MediaInfo (Linux)
-        if: runner.os == 'Linux'
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libmediainfo-dev patchelf desktop-file-utils
       - name: Install MediaInfo (macOS)
-        if: runner.os == 'macOS'
+        if: matrix.platform == 'macos'
         env:
           HOMEBREW_NO_REQUIRE_TAP_TRUST: "1"
         run: brew install media-info libmediainfo
-      - name: Install MediaInfo (Windows)
-        if: runner.os == 'Windows'
-        run: choco install mediainfo --no-progress
+      - name: Install MediaInfo and Inno Setup (Windows)
+        if: matrix.platform == 'windows'
+        run: choco install mediainfo innosetup --no-progress
 
       - name: Install Python dependencies
         run: |
           python -m pip install -r requirements-dev.txt
           python -m pip install -e .
 
-      # --- Nuitka-Build ---
-      # Note: pymediainfo loads libmediainfo via ctypes. On Linux/macOS
-      # Nuitka's dll-files plugin automatically detects the library and bundles it,
-      # as long as it is installed at build time. Only on Windows must the DLL
-      # be specified manually as a data file (no automatic ctypes scan
-      # for WinDLL calls).
-      - name: Build with Nuitka (Linux)
-        if: runner.os == 'Linux'
+      - name: Build Debian package
+        if: matrix.platform == 'linux'
         run: |
+          mkdir -p nuitka-out release
+          version=$(python -c "from codeclister import __version__; print(__version__)")
           python -m nuitka \
             --onefile \
             --remove-output \
@@ -67,30 +76,18 @@ jobs:
             --include-package=pymediainfo \
             --include-data-dir=src/codeclister/assets=codeclister/assets \
             --include-data-dir=translations=translations \
-            --output-filename=CodecLister_linux \
+            --output-filename=CodecLister \
             --output-dir=nuitka-out \
             --assume-yes-for-downloads \
             src/codeclister/__main__.py
-      - name: Build with Nuitka (macOS)
-        if: runner.os == 'macOS'
+          bash packaging/linux/build_deb.sh "$version" "${{ matrix.deb_architecture }}" nuitka-out/CodecLister release
+
+      - name: Build Windows installer
+        if: matrix.platform == 'windows'
+        shell: pwsh
         run: |
-          python -m nuitka \
-            --onefile \
-            --remove-output \
-            --enable-plugin=pyside6 \
-            --include-package=pymediainfo \
-            --include-data-dir=src/codeclister/assets=codeclister/assets \
-            --include-data-dir=translations=translations \
-            --output-filename=CodecLister_mac \
-            --output-dir=nuitka-out \
-            --assume-yes-for-downloads \
-            src/codeclister/__main__.py
-      - name: Build with Nuitka (Windows)
-        if: runner.os == 'Windows'
-        run: |
+          New-Item -ItemType Directory -Force -Path nuitka-out, release | Out-Null
           $dll = "C:\Program Files\MediaInfo\MediaInfo.dll"
-          # Konsole bleibt sichtbar, wenn der Lauf ueber workflow_dispatch mit debug_console=true gestartet wurde.
-          $consoleMode = "${{ github.event.inputs.debug_console }}" -eq "true" ? "force" : "disable"
           python -m nuitka `
             --onefile `
             --remove-output `
@@ -100,17 +97,46 @@ jobs:
             --include-data-dir=translations=translations `
             --include-data-files="$dll=MediaInfo.dll" `
             --windows-icon-from-ico=src\codeclister\assets\icon.ico `
-            --windows-console-mode=$consoleMode `
+            --windows-console-mode=disable `
             --output-filename=CodecLister.exe `
             --output-dir=nuitka-out `
             --assume-yes-for-downloads `
             src/codeclister/__main__.py
+          $env:CODECLISTER_VERSION = python -c "from codeclister import __version__; print(__version__)"
+          $env:CODECLISTER_SOURCE_DIR = (Resolve-Path nuitka-out).Path
+          $env:CODECLISTER_OUTPUT_DIR = (Resolve-Path release).Path
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\windows\CodecLister.iss
+
+      - name: Build macOS disk image
+        if: matrix.platform == 'macos'
+        run: |
+          mkdir -p nuitka-out release
+          version=$(python -c "from codeclister import __version__; print(__version__)")
+          python -m nuitka \
+            --standalone \
+            --remove-output \
+            --enable-plugin=pyside6 \
+            --include-package=pymediainfo \
+            --include-data-dir=src/codeclister/assets=codeclister/assets \
+            --include-data-dir=translations=translations \
+            --macos-create-app-bundle \
+            --macos-app-icon=src/codeclister/assets/icon.icns \
+            --output-filename=CodecLister \
+            --output-dir=nuitka-out \
+            --assume-yes-for-downloads \
+            src/codeclister/__main__.py
+          hdiutil create \
+            -volname CodecLister \
+            -srcfolder nuitka-out/CodecLister.app \
+            -ov \
+            -format UDZO \
+            "release/CodecLister-${version}-macos-${{ matrix.macos_architecture }}.dmg"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodecLister-${{ matrix.os }}
-          path: nuitka-out/*
+          name: CodecLister-${{ matrix.name }}
+          path: release/*
           if-no-files-found: error
 
   release:
