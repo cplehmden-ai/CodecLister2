@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codeclister"
-version = "1.0.2"
+version = "1.0.4"
 description = "Listet Video-/Audio-Codecs, Aufloesung und HDR-Infos aller Mediendateien in einem Ordner auf."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,7 +41,7 @@ codeclister = "codeclister.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-codeclister = ["assets/*.ico", "assets/*.png"]
+codeclister = ["assets/*.ico", "assets/*.icns", "assets/*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

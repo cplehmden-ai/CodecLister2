@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CodecLister
+Comment=List media codecs, resolutions and HDR metadata
+Exec=/opt/CodecLister/CodecLister
+Icon=codeclister
+Categories=AudioVideo;Utility;
+Terminal=false

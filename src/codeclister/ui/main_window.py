@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSettings, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSettings, QTimer, Qt
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -205,6 +205,12 @@ class MainWindow(QMainWindow):
     def _t(self, message: str) -> str:
         return self._translation.gettext(message)
 
+    def _show_status(self, message: str, timeout: int = 0) -> None:
+        self.status_message.setText(message)
+        self.status_timer.stop()
+        if timeout:
+            self.status_timer.start(timeout)
+
     # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
         central = QWidget(self)
@@ -300,10 +306,14 @@ class MainWindow(QMainWindow):
         self.table.selectionModel().selectionChanged.connect(
             lambda *_: self.table.viewport().update()
         )
-        root.addWidget(self.table, stretch=1)
+        table_row = QHBoxLayout()
+        table_row.setContentsMargins(9, 0, 0, 0)
+        table_row.addWidget(self.table)
+        root.addLayout(table_row, stretch=1)
 
         # Zeile 3: Speichern/Laden + Zaehler
         bottom = QHBoxLayout()
+        bottom.setContentsMargins(9, 0, 9, 0)
         self.btn_save_json = QPushButton(self._t("Save list (JSON)..."))
         self.btn_save_json.clicked.connect(self.on_save_json)
         self.btn_save_csv = QPushButton(self._t("Export CSV..."))
@@ -319,11 +329,17 @@ class MainWindow(QMainWindow):
         root.addLayout(bottom)
 
         # Statuszeile mit Fortschritt
+        self.status_message = QLabel()
+        self.status_message.setContentsMargins(9, 0, 0, 0)
+        self.status_timer = QTimer(self)
+        self.status_timer.setSingleShot(True)
+        self.status_timer.timeout.connect(self.status_message.clear)
         self.progress = QProgressBar()
         self.progress.setMaximumWidth(360)
         self.progress.setVisible(False)
+        self.statusBar().addWidget(self.status_message, stretch=1)
         self.statusBar().addPermanentWidget(self.progress)
-        self.statusBar().showMessage(self._t("Ready."))
+        self._show_status(self._t("Ready."))
 
         self.setCentralWidget(central)
 
@@ -377,7 +393,7 @@ class MainWindow(QMainWindow):
             self.lbl_folder.setText(str(self._folder))
             self.lbl_folder.setStyleSheet("")
             self._update_scan_buttons()
-            self.statusBar().showMessage(self._t("Last folder restored."), 5000)
+            self._show_status(self._t("Last folder restored."), 5000)
 
     def on_choose_folder(self) -> None:
         start_dir = str(self._folder) if self._folder else ""
@@ -398,7 +414,7 @@ class MainWindow(QMainWindow):
         self._update_count()
         self.progress.setVisible(True)
         self.progress.setRange(0, 0)  # unbestimmt, bis scan_started kommt
-        self.statusBar().showMessage(self._t("Search media files..."))
+        self._show_status(self._t("Search media files..."))
         self._update_scan_buttons(scanning=True)
 
         self._worker = ScanWorker(self._folder, self.chk_recursive.isChecked(), self)
@@ -410,13 +426,13 @@ class MainWindow(QMainWindow):
 
     def on_cancel_scan(self) -> None:
         if self._worker is not None:
-            self.statusBar().showMessage(self._t("Cancelling..."))
+            self._show_status(self._t("Cancelling..."))
             self._worker.cancel()
 
     def on_scan_started(self, total: int) -> None:
         self.progress.setRange(0, max(total, 1))
         self.progress.setValue(0)
-        self.statusBar().showMessage(self._t("{count} media files found.").format(count=total))
+        self._show_status(self._t("{count} media files found.").format(count=total))
 
     def on_file_scanned(self, item: MediaFileInfo) -> None:
         self.model.add_item(item)
@@ -425,7 +441,7 @@ class MainWindow(QMainWindow):
     def on_progress(self, current: int, total: int, name: str) -> None:
         self.progress.setValue(current)
         if name:
-            self.statusBar().showMessage(f"[{current}/{total}] {name}")
+            self._show_status(f"[{current}/{total}] {name}")
 
     def on_scan_finished(self, completed: bool) -> None:
         self.progress.setVisible(False)
@@ -434,7 +450,7 @@ class MainWindow(QMainWindow):
         errors = sum(1 for i in self.model.all_items if i.error)
         if errors:
             text += f" ({self._t('{count} file(s) unreadable').format(count=errors)})"
-        self.statusBar().showMessage(text, 8000)
+        self._show_status(text, 8000)
         if self._worker is not None:
             self._worker.deleteLater()
             self._worker = None
@@ -482,7 +498,7 @@ class MainWindow(QMainWindow):
             # Es wird die gefilterte Sicht gespeichert, wenn Filter aktiv sind.
             items = self.model.visible_items
             save_json(items, Path(path), self._current_folder_text())
-            self.statusBar().showMessage(self._t("List saved: {path}").format(path=path), 8000)
+            self._show_status(self._t("List saved: {path}").format(path=path), 8000)
         except OSError as exc:
             QMessageBox.critical(self, __app_name__, self._t("Saving failed:\n{error}").format(error=exc))
 
@@ -497,7 +513,7 @@ class MainWindow(QMainWindow):
             return
         try:
             save_csv(self.model.visible_items, Path(path))
-            self.statusBar().showMessage(self._t("Exported: {path}").format(path=path), 8000)
+            self._show_status(self._t("Exported: {path}").format(path=path), 8000)
         except OSError as exc:
             QMessageBox.critical(self, __app_name__, self._t("Export failed:\n{error}").format(error=exc))
 
@@ -514,4 +530,4 @@ class MainWindow(QMainWindow):
             return
         self.model.set_items(items)
         self._update_count()
-        self.statusBar().showMessage(self._t("{count} entries loaded.").format(count=len(items)), 8000)
+        self._show_status(self._t("{count} entries loaded.").format(count=len(items)), 8000)

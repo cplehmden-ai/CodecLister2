@@ -70,6 +70,28 @@ VS Code launch configuration does this automatically.
 pytest
 ```
 
+## Release installers
+
+GitHub Actions builds the following installation packages for every `v*` tag:
+
+- Windows x64 installer (`.exe`) with Start menu entry, optional desktop shortcut, and uninstaller
+- Debian package (`.deb`) for Linux x64 / `amd64`, suitable for Debian, Ubuntu, and Zorin OS
+- Debian package (`.deb`) for Linux ARM64 / `arm64`, suitable for 64-bit Raspberry Pi OS
+- macOS disk images (`.dmg`) for Intel and Apple Silicon Macs
+
+Install Debian packages with:
+
+```bash
+sudo apt install ./codeclister_<version>_<architecture>.deb
+```
+
+The ARM64 build uses GitHub's `ubuntu-24.04-arm` runner. For private repositories
+where this runner is unavailable, configure a self-hosted 64-bit Raspberry Pi runner
+and replace that runner label in [.github/workflows/build.yml](.github/workflows/build.yml).
+
+macOS packages are not code-signed or notarized. macOS may therefore require users to
+explicitly allow the first launch in System Settings.
+
 ## Local binary build with Nuitka
 
 ```bash
@@ -88,6 +110,16 @@ python -m nuitka --onefile --enable-plugin=pyside6 ^
 
 On Linux/macOS, omit `--windows-console-mode`. See
 [.github/workflows/build.yml](.github/workflows/build.yml) for details.
+
+## macOS icon
+
+The macOS icon is generated from the PNG master icon without requiring a Mac:
+
+```bash
+python tools/create_icns.py
+```
+
+This writes `src/codeclister/assets/icon.icns` with icon sizes from 16 to 1024 pixels.
 
 ## Release binaries
 
@@ -117,6 +149,8 @@ src/codeclister/
     └── main_window.py       # main window, table, filters, progress
 tests/                       # pytest tests
 translations/                # built-in and custom PO translations
+packaging/                   # Windows and Debian installer definitions
+tools/create_icns.py         # macOS icon generator
 .github/workflows/build.yml  # Nuitka matrix build and release
 ```
 
