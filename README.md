@@ -77,7 +77,7 @@ GitHub Actions builds the following installation packages for every `v*` tag:
 - Windows x64 installer (`.exe`) with Start menu entry, optional desktop shortcut, and uninstaller
 - Debian package (`.deb`) for Linux x64 / `amd64`, suitable for Debian, Ubuntu, and Zorin OS
 - Debian package (`.deb`) for Linux ARM64 / `arm64`, suitable for 64-bit Raspberry Pi OS
-- macOS disk images (`.dmg`) for Intel and Apple Silicon Macs
+- macOS disk images (`.dmg`) for Apple Silicon Macs
 
 Install Debian packages with:
 
