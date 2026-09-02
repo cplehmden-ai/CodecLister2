@@ -18,6 +18,7 @@ ICON_SIZES = {
     "ic09": 512,
     "ic10": 1024,
 }
+ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 
 def png_data(image: QImage, size: int) -> bytes:
@@ -45,13 +46,34 @@ def create_icns(source: Path, target: Path) -> None:
     target.write_bytes(b"icns" + struct.pack(">I", len(payload) + 8) + payload)
 
 
+def create_ico(source: Path, target: Path) -> None:
+    """Schreibt einen ICO-Container mit PNG-Einträgen für Windows Explorer."""
+    image = QImage(str(source))
+    if image.isNull():
+        raise ValueError(f"PNG konnte nicht geladen werden: {source}")
+
+    images = [png_data(image, size) for size in ICO_SIZES]
+    offset = 6 + 16 * len(images)
+    entries = []
+    for size, data in zip(ICO_SIZES, images):
+        encoded_size = 0 if size == 256 else size
+        entries.append(
+            struct.pack("<BBBBHHII", encoded_size, encoded_size, 0, 0, 1, 32, len(data), offset)
+        )
+        offset += len(data)
+    target.write_bytes(struct.pack("<HHH", 0, 1, len(images)) + b"".join(entries + images))
+
+
 if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
     source_path = project_root / "src" / "codeclister" / "assets" / "icon.png"
-    target_path = source_path.with_suffix(".icns")
+    icns_path = source_path.with_suffix(".icns")
+    ico_path = source_path.with_suffix(".ico")
     try:
-        create_icns(source_path, target_path)
+        create_icns(source_path, icns_path)
+        create_ico(source_path, ico_path)
     except (OSError, RuntimeError, ValueError) as exc:
         print(exc, file=sys.stderr)
         raise SystemExit(1) from exc
-    print(f"ICNS erstellt: {target_path}")
+    print(f"ICNS erstellt: {icns_path}")
+    print(f"ICO erstellt: {ico_path}")
